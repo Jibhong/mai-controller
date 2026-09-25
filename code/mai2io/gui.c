@@ -160,11 +160,11 @@ static void handle_mouse_down(int x, int y) {
         } else if (zone == 16) {
             // C1 + Select
             set_touch_bit(touch_state, 16, true);
-            *gamebtn_state |= MAI2_IO_GAMEBTN_SELECT;
+            *gamebtn_state |= MAI2_IO_GAMEBTN[8];
         } else if (zone == 17) {
             // C2 + Select
             set_touch_bit(touch_state, 17, true);
-            *gamebtn_state |= MAI2_IO_GAMEBTN_SELECT;
+            *gamebtn_state |= MAI2_IO_GAMEBTN[8];
         } else if (zone < 34) {
             // Touch sensor
             set_touch_bit(touch_state, zone, true);
