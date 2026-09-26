@@ -71,8 +71,8 @@ void mai2_io_config_load(
             filename);
     }
 
-    cfg->debug_input_1p = GetPrivateProfileIntW(L"touch", L"p1DebugInput", 0, filename);
-    cfg->debug_input_2p = GetPrivateProfileIntW(L"touch", L"p2DebugInput", 0, filename);
+    // cfg->debug_input_1p = GetPrivateProfileIntW(L"touch", L"p1DebugInput", 0, filename);
+    // cfg->debug_input_2p = GetPrivateProfileIntW(L"touch", L"p2DebugInput", 0, filename);
     for (i = 0; i < 34; i++)
     {
         swprintf_s(key, _countof(key), L"p1Touch%S", sensor_map[i]);
