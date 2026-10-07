@@ -2,10 +2,12 @@
 
 #include <limits.h>
 #include <process.h>
+#include <stdio.h>
 #include <string.h>
 
 #include "config.h"
 #include "gui.h"
+#include "serial_link.h"
 
 static uint8_t mai2_opbtn;
 static uint16_t mai2_player1_btn;
@@ -23,6 +25,7 @@ uint16_t mai2_io_get_api_version(void) { return 0x0102; }
 HRESULT mai2_io_init(void) {
     mai2_io_config_load(&mai2_io_cfg, L".\\segatools.ini");
     mai2_gui_init();
+    serial_link_init();
     return S_OK;
 }
 
@@ -32,6 +35,7 @@ HRESULT mai2_io_poll(void) {
     mai2_player2_btn = 0;
     
     mai2_gui_get_opbtns(&mai2_opbtn);
+    serial_link_get_opbtns(&mai2_opbtn);
 
     if (GetAsyncKeyState(mai2_io_cfg.vk_test) & 0x8000) {
         mai2_opbtn |= MAI2_IO_OPBTN_TEST;
@@ -57,6 +61,7 @@ HRESULT mai2_io_poll(void) {
 
     // Player 1
     mai2_gui_get_gamebtns(1, &mai2_player1_btn);
+    serial_link_get_gamebtns(1, &mai2_player1_btn);
 
     for(int i = 0; i < 9; ++i){
         if (GetAsyncKeyState(mai2_io_cfg.vk_1p_btn[i])) {
@@ -66,6 +71,7 @@ HRESULT mai2_io_poll(void) {
 
     // Player 2
     mai2_gui_get_gamebtns(2, &mai2_player2_btn);
+    serial_link_get_gamebtns(2, &mai2_player2_btn);
 
     for(int i = 0; i < 9; ++i){
         if (GetAsyncKeyState(mai2_io_cfg.vk_2p_btn[i])) {
@@ -139,6 +145,7 @@ static unsigned int __stdcall mai2_io_touch_1p_thread_proc(void *ctx) {
         uint8_t state[7] = {0, 0, 0, 0, 0, 0, 0};
 
         mai2_gui_get_touch_state(1, state);
+        serial_link_get_touch_state(1, state);
 
         for (int i = 0; i < 34; i++) {
             if (GetAsyncKeyState(mai2_io_cfg.vk_1p_touch[i])) {
@@ -162,6 +169,7 @@ static unsigned int __stdcall mai2_io_touch_2p_thread_proc(void *ctx) {
         uint8_t state[7] = {0, 0, 0, 0, 0, 0, 0};
 
         mai2_gui_get_touch_state(2, state);
+        serial_link_get_touch_state(2, state);
 
         for (int i = 0; i < 34; i++) {
             if (GetAsyncKeyState(mai2_io_cfg.vk_2p_touch[i])) {
@@ -242,6 +250,7 @@ BOOL WINAPI DllMain(HINSTANCE hinstDLL, DWORD fdwReason, LPVOID lpvReserved)
             DisableThreadLibraryCalls(hinstDLL);
             break;
         case DLL_PROCESS_DETACH:
+            serial_link_shutdown();
             mai2_gui_shutdown();
             break;
     }

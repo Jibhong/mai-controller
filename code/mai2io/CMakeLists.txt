@@ -26,9 +26,10 @@ ENDIF()
 ADD_LIBRARY(mai2io SHARED
     mai2io.c
     config.c
-    gui.c)
+    gui.c
+    serial_link.c)
 
-TARGET_LINK_LIBRARIES(mai2io user32 gdi32)
+TARGET_LINK_LIBRARIES(mai2io user32 gdi32 setupapi)
 
 SET_TARGET_PROPERTIES(mai2io PROPERTIES
     OUTPUT_NAME "mai2io"
