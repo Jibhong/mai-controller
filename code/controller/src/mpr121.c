@@ -14,8 +14,8 @@
 
 #define IO_TIMEOUT_US 1000
 
-#define TOUCH_THRESHOLD_BASE 35
-#define RELEASE_THRESHOLD_BASE 30
+#define TOUCH_THRESHOLD_BASE 20
+#define RELEASE_THRESHOLD_BASE 18
 
 #define VDD 3.3f
 #define AC_HEADROOM 0.5f            // datasheet says 0.7; 0.1 often makes autoconfig fail on big pads
