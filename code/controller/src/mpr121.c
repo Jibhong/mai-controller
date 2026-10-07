@@ -15,7 +15,7 @@
 #define IO_TIMEOUT_US 1000
 
 #define TOUCH_THRESHOLD_BASE 40 
-#define RELEASE_THRESHOLD_BASE 35
+#define RELEASE_THRESHOLD_BASE 30
 
 #define VDD 3.3f
 #define AC_HEADROOM 0.5f            // datasheet says 0.7; 0.1 often makes autoconfig fail on big pads
@@ -82,47 +82,56 @@ bool mpr121_init(uint8_t i2c_addr) {
   sleep_ms(2);
   write_reg(i2c_addr, 0x5E, 0x00); // stop mode while configuring
 
-  // baseline filter (unchanged)
+  // baseline filter
+  // rising
   write_reg(i2c_addr, 0x2B, 1);
   write_reg(i2c_addr, 0x2C, 1);
-  write_reg(i2c_addr, 0x2D, 1);
-  write_reg(i2c_addr, 0x2E, 1);
+  write_reg(i2c_addr, 0x2D, 0);
+  write_reg(i2c_addr, 0x2E, 0);
+  // falling (was 1,1,6,12 -> much faster)
   write_reg(i2c_addr, 0x2F, 1);
   write_reg(i2c_addr, 0x30, 1);
-  write_reg(i2c_addr, 0x31, 6);
-  write_reg(i2c_addr, 0x32, 12);
+  write_reg(i2c_addr, 0x31, 2);
+  write_reg(i2c_addr, 0x32, 2);
+  // touched (was 1,8,30)
   write_reg(i2c_addr, 0x33, 1);
-  write_reg(i2c_addr, 0x34, 8);
-  write_reg(i2c_addr, 0x35, 30);
+  write_reg(i2c_addr, 0x34, 4);
+  write_reg(i2c_addr, 0x35, 8);
 
+  // Sensitive thresholds since filtering is off and pad is resistive
   for (int i = 0; i < 12; i++) {
-    write_reg(i2c_addr, 0x41 + i * 2, TOUCH_THRESHOLD_BASE);
-    write_reg(i2c_addr, 0x42 + i * 2, RELEASE_THRESHOLD_BASE);
+    write_reg(i2c_addr, 0x41 + i * 2, TOUCH_THRESHOLD_BASE);   // e.g., 6 - 8
+    write_reg(i2c_addr, 0x42 + i * 2, RELEASE_THRESHOLD_BASE); // e.g., 3 - 4
   }
 
-  // debounce: 2 samples touch / 2 samples release (noise rejection)
-  write_reg(i2c_addr, 0x5B, 0x22);
+  // 1. DEBOUNCE: 0 samples (immediate trigger, 0ms debounce delay)
+  write_reg(i2c_addr, 0x5B, 0x00);
 
-  // AFE: FFI=10 samples, start CDC=32uA (autoconfig overrides per electrode)
-  write_reg(i2c_addr, 0x5C, 0b01100000);
-  // Filter: CDT=16us (long charge for slow-rising signal / big C), SFI=6, ESI=1ms
-  write_reg(i2c_addr, 0x5D, 0b11001000);
+  // 2. AFE: FFI = 6 samples (0b00) [MIN FILTER], CDC start = 32uA
+  write_reg(i2c_addr, 0x5C, 0x20);
 
-  // Autoconfig: FFI=10 (must match 0x5C), retry=8x, BVA=10, ARE+ACE on
-  write_reg(i2c_addr, 0x7B, 0b01111011);
-  write_reg(i2c_addr, 0x7C, 0x00); // SCTS=0: search charge time per electrode
+  // 3. Filter/Timing: CDT = 32us (0b111) [MAX CHARGE], SFI = 4 (0b00) [MIN FILTER], ESI = 1ms (0b000)
+  write_reg(i2c_addr, 0x5D, 0xE0);
 
+  // 4. Autoconfig 1: FFI=6 (0b00 to match 0x5C), RETRY=4x, BVA=10, ARE=1, ACE=1
+  write_reg(i2c_addr, 0x7B, 0x2B);
+  
+  // 5. Autoconfig 2: Enable search
+  write_reg(i2c_addr, 0x7C, 0x00);
+
+  // Target voltage levels
   const uint8_t usl = (VDD - AC_HEADROOM) / VDD * 256;
   write_reg(i2c_addr, 0x7D, usl);
-  write_reg(i2c_addr, 0x7E, usl * 0.65);
-  write_reg(i2c_addr, 0x7F, usl * 0.9);
+  write_reg(i2c_addr, 0x7E, usl * 0.55);
+  write_reg(i2c_addr, 0x7F, usl * 0.80); 
 
-  // run 12 electrodes, autoconfig runs on entering run mode; retry on failure
-  for (int tries = 0; tries < 3; tries++) {
+  // Enable all 12 electrodes + Auto-config
+  for (int tries = 0; tries < 5; tries++) {
     write_reg(i2c_addr, 0x5E, 0x00);
     write_reg(i2c_addr, 0x5E, 0x8C);
     sleep_ms(50);
-    if ((read_reg(i2c_addr, 0x02) & 0xC0) == 0) break; // ACFAIL/ARFAIL clear
+    
+    if ((read_reg(i2c_addr, 0x02) & 0xC0) == 0) break; 
   }
 
   return read_reg(i2c_addr, 0x5E) == 0x8C;
@@ -185,11 +194,15 @@ void mpr121_filter(uint8_t addr, uint8_t ffi, uint8_t sfi, uint8_t esi) {
 void mpr121_sense(uint8_t addr, int8_t sense, int8_t *sense_keys, int num) {
   uint8_t ecr = mpr121_stop(addr);
   for (int i = 0; (i < num) && (i < 12); i++) {
-    int8_t delta = sense + sense_keys[i];
-    write_reg(addr, MPR121_TOUCH_THRESHOLD_REG + i * 2,
-              TOUCH_THRESHOLD_BASE - delta);
-    write_reg(addr, MPR121_RELEASE_THRESHOLD_REG + i * 2,
-              RELEASE_THRESHOLD_BASE - delta / 2);
+    int delta = sense + sense_keys[i];
+    int t = TOUCH_THRESHOLD_BASE - delta;
+    if (t < 4) t = 4;
+    if (t > 255) t = 255;
+    int r = t * 3 / 4;              // keep release below touch
+    if (r > t - 2) r = t - 2;
+    if (r < 1) r = 1;
+    write_reg(addr, MPR121_TOUCH_THRESHOLD_REG + i * 2, t);
+    write_reg(addr, MPR121_RELEASE_THRESHOLD_REG + i * 2, r);
   }
   mpr121_resume(addr, ecr);
 }

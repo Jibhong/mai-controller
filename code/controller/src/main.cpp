@@ -82,7 +82,7 @@ static const int16_t mpr_map[3][12] = {
     {
         TOUCH(ROW_D, 8), TOUCH(ROW_E, 8), TOUCH(ROW_A, 7), TOUCH(ROW_B, 7),
         TOUCH(ROW_D, 7), TOUCH(ROW_E, 7), TOUCH(ROW_C, 2), TOUCH(ROW_A, 6),
-        TOUCH(ROW_B, 6), TOUCH(ROW_D, 6), TOUCH(ROW_E, 6), TOUCH(ROW_E, 6),
+        TOUCH(ROW_B, 6), TOUCH(ROW_D, 6), TOUCH(ROW_E, 6), UNUSED,
     },
 };
 
