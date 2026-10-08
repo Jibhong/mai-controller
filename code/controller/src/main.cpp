@@ -116,6 +116,10 @@ static uint8_t coin_btn       = 0;
 
 //
 
+#define COL_GREEN "\033[42;30m"  // green background, black text
+#define COL_RED   "\033[41;37m"  // red background, white text
+#define COL_RESET "\033[0m"
+
 void debug_mpr121(int mode) {
     static const uint8_t addrs[3] = {0x5A, 0x5B, 0x5C};
 
@@ -130,15 +134,21 @@ void debug_mpr121(int mode) {
 
             for (int pin = 0; pin < 12; pin++) {
                 uint8_t status = (touched >> pin) & 1;
-                Serial.printf("%d_%d ", raw[pin], status);
+                Serial.printf("%s%d_%d%s ",
+                              status ? COL_GREEN : COL_RED,
+                              raw[pin], status,
+                              COL_RESET);
             }
-        } 
+        }
         // Touch state only if raw is not requested
         else if (mode & (1 << 1)) {
             uint16_t touched = mpr121_touched(addr);
             for (int pin = 0; pin < 12; pin++) {
                 uint8_t status = (touched >> pin) & 1;
-                Serial.printf("%d_%d ",pin, status);
+                Serial.printf("%s%d_%d%s ",
+                              status ? COL_GREEN : COL_RED,
+                              pin, status,
+                              COL_RESET);
             }
             Serial.printf("| ");
         }
