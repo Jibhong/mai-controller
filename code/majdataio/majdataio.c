@@ -7,6 +7,7 @@
  *   this program  (named-pipe SERVER, replaces IO2Pipe)
  *        |-- \\.\pipe\MajdataPlay.IO.ButtonRing.{N}P   (BA1..BA8, TEST, SERVICE)
  *        |-- \\.\pipe\MajdataPlay.IO.TouchPanel.{N}P   (A1..E8, 34 zones)
+ *        |-- \\.\pipe\MajdataPlay.IO.Led.{N}P          (served so the game's LED loop connects; data discarded)
  *        v
  *   MajdataPlay (named-pipe CLIENT, IO Manufacturer = "Pipe")
  *
@@ -17,7 +18,8 @@
  * Protocol source: https://github.com/TeamMajdata/IO2Pipe
  *
  * Build (MinGW):  gcc -O2 -o majdataplayio.exe majdataplayio.c -lsetupapi -ladvapi32
- * Usage:          majdataplayio.exe [--player 1|2] [--vid 2E8A] [--pid 000A] [--touch-to-buttons]
+ * Usage:          majdataplayio.exe [--player 1|2] [--vid 2E8A] [--pid 000A] [--touch-to-buttons] [-v]
+ *   -v  verbose: print every state change
  *   --touch-to-buttons  (-t)  also press button N while touch zone AN is touched (A1-A8 -> BA1-BA8)
  * Do not run together with IO2Pipe (same pipe names).
  */
@@ -261,6 +263,31 @@ static void pipe_service(Pipe *p, uint64_t state, DWORD now)
     }
 }
 
+/* The game's LED loop also connects as a client; serve the pipe and discard what it sends. */
+static void led_service(Pipe *p)
+{
+    if (!p->connected) {
+        BOOL ok  = ConnectNamedPipe(p->h, NULL);
+        DWORD er = ok ? 0 : GetLastError();
+        if (ok || er == ERROR_PIPE_CONNECTED) {
+            p->connected = true;
+            printf("[pipe] game connected to %s\n", p->label);
+        } else {
+            if (er == ERROR_NO_DATA) DisconnectNamedPipe(p->h);
+            return;
+        }
+    }
+    uint8_t buf[256];
+    DWORD got = 0;
+    if (!ReadFile(p->h, buf, sizeof buf, &got, NULL)) {
+        if (GetLastError() == ERROR_BROKEN_PIPE) {
+            DisconnectNamedPipe(p->h);
+            p->connected = false;
+            printf("[pipe] game left %s\n", p->label);
+        }
+    }
+}
+
 /* -------------------------------------------------------------------- main */
 
 static volatile bool g_run = true;
@@ -277,13 +304,15 @@ int main(int argc, char **argv)
     uint16_t vid = DEFAULT_VID, pid = DEFAULT_PID;
     int player = 1;
     bool touch_to_buttons = false;
+    bool verbose = false;
 
     for (int i = 1; i < argc; i++) {
         if      (!strcmp(argv[i], "--touch-to-buttons") || !strcmp(argv[i], "-t")) touch_to_buttons = true;
+        else if (!strcmp(argv[i], "-v")) verbose = true;
         else if (!strcmp(argv[i], "--vid")    && i + 1 < argc) vid    = (uint16_t)strtoul(argv[++i], NULL, 16);
         else if (!strcmp(argv[i], "--pid")    && i + 1 < argc) pid    = (uint16_t)strtoul(argv[++i], NULL, 16);
         else if (!strcmp(argv[i], "--player") && i + 1 < argc) player = atoi(argv[++i]);
-        else { fprintf(stderr, "usage: %s [--player 1|2] [--vid hex] [--pid hex] [--touch-to-buttons]\n", argv[0]); return 1; }
+        else { fprintf(stderr, "usage: %s [--player 1|2] [--vid hex] [--pid hex] [--touch-to-buttons] [-v]\n", argv[0]); return 1; }
     }
     if (player != 1 && player != 2) player = 1;
 
@@ -291,9 +320,10 @@ int main(int argc, char **argv)
     printf("majdataplayio: VID_%04X&PID_%04X -> player %d pipes%s\n", vid, pid, player,
            touch_to_buttons ? " (touch A1-A8 also pressed as buttons 1-8)" : "");
 
-    Pipe buttons, touch;
+    Pipe buttons, touch, led;
     if (!pipe_create(&buttons, "MajdataPlay.IO.ButtonRing", player, "ButtonRing")) return 1;
     if (!pipe_create(&touch,   "MajdataPlay.IO.TouchPanel", player, "TouchPanel")) return 1;
+    if (!pipe_create(&led,     "MajdataPlay.IO.Led",        player, "Led"))        return 1;
 
     HANDLE dev = INVALID_HANDLE_VALUE;
     State  cur;
@@ -346,6 +376,16 @@ int main(int argc, char **argv)
         if (touch_to_buttons) btn_state |= touch_state & 0xFFULL;   /* A1-A8 -> BA1-BA8 */
         pipe_service(&buttons, btn_state, now);
         pipe_service(&touch,   touch_state, now);
+        led_service(&led);
+
+        if (verbose) {
+            static uint64_t pv_t = 0, pv_b = 0;
+            if (touch_state != pv_t || btn_state != pv_b) {
+                printf("[state] touch=%09llX buttons=%03llX\n",
+                       (unsigned long long)touch_state, (unsigned long long)btn_state);
+                pv_t = touch_state; pv_b = btn_state;
+            }
+        }
     }
 
     /* shutdown: clear state */
@@ -354,5 +394,6 @@ int main(int argc, char **argv)
     if (dev != INVALID_HANDLE_VALUE) CloseHandle(dev);
     CloseHandle(buttons.h);
     CloseHandle(touch.h);
+    CloseHandle(led.h);
     return 0;
 }

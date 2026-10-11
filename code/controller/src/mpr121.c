@@ -39,8 +39,8 @@
  * ESI: electrode sample interval (period between scans)
  *      0 = 1ms, 1 = 2ms, 2 = 4ms ... 7 = 128ms.  0 = fastest response.
  */
-#define FILTER_FFI             1      // 0..3
-#define FILTER_SFI             1      // 0..3
+#define FILTER_FFI             3      // 0..3
+#define FILTER_SFI             0      // 0..3
 #define FILTER_ESI             0      // 0..7
 
 /* ============== CHARGE (MANUAL MODE, autoconfig off) ==============
