@@ -1,5 +1,6 @@
 # My washing machine game
 I made this circular game controller at home without any power tools and keeping the cost as low as possible so the design might look very different from other peoples build.
+![](Image/wow.webp)
 
 ## The problems
 > Cost and space are my first concerns, so instead of using 42inch tv i use two 27 inch monitor + 1 laptop monitor for sub display this way i can easily get 120fps or even higher for fraction of a price of 43inch tv because for most small tv the 120hz varient only sony bravo lcd and lg c oled both are more premium models at around 22k thb but mine can go as low as 7,000 thb as of today (included monitor arm) and can be use as normal desktop monitor saving spaces a lot.
@@ -28,7 +29,7 @@ You can use your old monitor or if buying new one you can fine entry level 27inc
 
 | Qty | Item | Notes |
 |---|---|---|
-| 4 | OTA coated A4 PET film one side no glue | < 40 ohm/square. Mine are cut slightly short on the short side, the pdf file have compensates on both axes |
+| 4 | OTA coated A4 PET film one side no glue | < 40 ohm/square. Mine are 27ohm/square and being cut slightly smaller than A4, the pdf file have compensates on both axes |
 | 20 | OCA glue 7.9in | check dimensions first it must fit largest A pad. 7.9in is for tablet-sized not phone |
 | 1 | Pi Pico 2 | |
 | 3 | MPR121 breakout board | |
@@ -73,12 +74,14 @@ Buy one or 3d print.
 
 # Assembly
 ## Frame
+![](Image/frame.webp)
 ## Glass
 ### ITO 
 Cut 4 Sheet of A4 pattern from PDF then apply OCA glue if your ITO doesn't have glue, go very slowly remove amy bubbles. Don't worry if there are bubbles you won't notice it anyway during gameplay.
-
+![](Image/ito-oca.webp)
 Clean the glass with 99% isopropyl alcohol then stick the ITO to it conductive side facing up, same here go slowly and remove bubbles.
 There should be 2cm gap on all 4 sides for mounting to the frame.
+![](Image/layout.webp)
 
 ### MPR121
 Cut the ADDR pad on all 3 MPR121 then stick it to 3 corner of glass with either hot glue or your leftover OCA (OCA give a cleaner and stronger result) then daisy chain all 3 with 4 core wire SDA/SCL/VDD/VSS.</br>
@@ -89,15 +92,17 @@ For ADDR connect 3 of then differently.</br>
 
 ### Wiring
 Strip a wire for small strands or use small 0.1mm copper wire then trace it from every pad to 3 corner with MPR121.
-Connecting wire to ITO pad you should clean the pad first with isopropyl alcohol carefully do not scratch the surface then test the resistance it should be around 50R with 1mm gap if it exceed move to another location then attatch copper tape to pad bridging outside to glass, give it at least 1cm on the pad if using 5mm wide tape larger contact area will ensure stability and prevent ghosting, if you see ghosting remove copper tape with isopropyl alcohol CAREFULLY then test the resistance this time it is 50/50 if the pad is still good, then solder the tape that is on the glass, if you solder on the pad copper can lift a bit and break connection (it will look fine but have ghost input, you can see raw mpr121 data that it rise/fall too little (touch not register) or fall and not rise up again (ghost)).
+Connecting wire to ITO pad you should clean the pad first with isopropyl alcohol carefully do not scratch the surface then test the resistance it should be around 50R with 1mm gap if it exceed move to another location then attatch copper tape to pad bridging outside to glass, give it at least 1cm on the pad if using 5mm wide tape larger contact area will ensure stability and prevent ghosting, if you see ghosting remove copper tape with isopropyl alcohol CAREFULLY then test the resistance this time it is 50/50 if the pad is still good, then solder the tape that is on the glass, if you solder on the pad copper can lift a bit and break connection (it will look fine but have ghost input, you can see raw mpr121 data that it rise/fall too little, too slow or not rise back up).
+![](Image/tape.webp)
+![](Image/full-glass.webp)
 
 ## Controller
 GND(PIN 38) -> VSS(3v3)</br>
 3V3(PIN 36) -> VDD(GND)</br>
 SDA(PIN 26) -> SDA(I2C)</br>
 SCL(PIN 27) -> SCL(I2C)</br>
-
+![](Image/controller.webp)
 If you want usb-c you can connect to 2 test pad under the raspberry pi (D+ D-) VBUS and GND don't forget to add two 5.1kR pull-down to CC1 and CC2.
 
 # References
-For touchscreen pattern and button 3D model https://github.com/Syndric/maimai-controller-fullsize
+For touch pad pattern and button 3D model https://github.com/Syndric/maimai-controller-fullsize
