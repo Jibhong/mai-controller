@@ -13,6 +13,7 @@ Note: **Currently I have finished only 80% of the project that is touch sensors 
 - [Header](#my-washing-machine-game)
 - [Price summary](#price-summary)
 - [Bill of Materials](#bill-of-materials)
+- [References](#References)
   
 </details>
 
@@ -69,3 +70,34 @@ Buy one or 3d print.
 | 8 | Mechanical keyboard switch | I'm not using optical switch lever |
 | 8 | Rod R=5mm L=80mm | |
 | 1 | 3D printer + 2kg PETG | |
+
+# Assembly
+## Frame
+## Glass
+### ITO 
+Cut 4 Sheet of A4 pattern from PDF then apply OCA glue if your ITO doesn't have glue, go very slowly remove amy bubbles. Don't worry if there are bubbles you won't notice it anyway during gameplay.
+
+Clean the glass with 99% isopropyl alcohol then stick the ITO to it conductive side facing up, same here go slowly and remove bubbles.
+There should be 2cm gap on all 4 sides for mounting to the frame.
+
+### MPR121
+Cut the ADDR pad on all 3 MPR121 then stick it to 3 corner of glass with either hot glue or your leftover OCA (OCA give a cleaner and stronger result) then daisy chain all 3 with 4 core wire SDA/SCL/VDD/VSS.</br>
+For ADDR connect 3 of then differently.</br>
+#1 ADDR -> VSS(3v3) = 0X5A</br>
+#2 ADDR -> VDD(GND) = 0X5B</br>
+#3 ADDR -> SDA(I2C) = 0X5C</br>
+
+### Wiring
+Strip a wire for small strands or use small 0.1mm copper wire then trace it from every pad to 3 corner with MPR121.
+Connecting wire to ITO pad you should clean the pad first with isopropyl alcohol carefully do not scratch the surface then test the resistance it should be around 50R with 1mm gap if it exceed move to another location then attatch copper tape to pad bridging outside to glass, give it at least 1cm on the pad if using 5mm wide tape larger contact area will ensure stability and prevent ghosting, if you see ghosting remove copper tape with isopropyl alcohol CAREFULLY then test the resistance this time it is 50/50 if the pad is still good, then solder the tape that is on the glass, if you solder on the pad copper can lift a bit and break connection (it will look fine but have ghost input, you can see raw mpr121 data that it rise/fall too little (touch not register) or fall and not rise up again (ghost)).
+
+## Controller
+GND(PIN 38) -> VSS(3v3)</br>
+3V3(PIN 36) -> VDD(GND)</br>
+SDA(PIN 26) -> SDA(I2C)</br>
+SCL(PIN 27) -> SCL(I2C)</br>
+
+If you want usb-c you can connect to 2 test pad under the raspberry pi (D+ D-) VBUS and GND don't forget to add two 5.1kR pull-down to CC1 and CC2.
+
+# References
+For touchscreen pattern and button 3D model https://github.com/Syndric/maimai-controller-fullsize
