@@ -39,7 +39,9 @@ You can use your old monitor or if buying new one you can fine entry level 27inc
 | 1 | Hot glue | or use OCA / clear tape |
 | 1 | 5 mm tempered glass, 560x560 mm | |
 | - | 2 mm EVA foam | for padding the glass |
-| 1 | 3D printer + 400g PETG | |
+| 1 | 3D printer + 400g PETG | for 70 and 40 deg angled bracket or buy metal one |
+| 2 | 40 deg angled bracket | PETG 10 layer wall |
+| 4 | 70 deg angled bracket | PETG 10 layer wall |
 
 ## Frame (2020 Aluminium)
 
@@ -64,6 +66,6 @@ Buy one or 3d print.
 | Qty | Item | Notes |
 |---|---|---|
 | 3m | 9 core wire | I use 10 core |
-| 8 | Mechanical keyboard switch | |
+| 8 | Mechanical keyboard switch | I'm not using optical switch lever |
 | 8 | Rod R=5mm L=80mm | |
 | 1 | 3D printer + 2kg PETG | |
